@@ -12,7 +12,7 @@ function Header({ title, navigation }: Props) {
     return (
         <View style={styles.header}>
             <Button 
-                style={styles.containerIcone}
+                style={styles.left}
                 onPress={() => navigation.goBack()}
             >
                 <FontAwesomeFreeSolid 
@@ -21,9 +21,12 @@ function Header({ title, navigation }: Props) {
                     color={'white'}
                 />
             </Button>
-            <TextWhite style={styles.title}>
-                {title}
-            </TextWhite>
+            <View style={styles.center}>
+                <TextWhite style={styles.title}>
+                    {title}
+                </TextWhite>
+            </View>
+            <View style={styles.right} />
         </View>
     )
 }
@@ -31,23 +34,29 @@ function Header({ title, navigation }: Props) {
 const styles = StyleSheet.create({
     header: {
         width: '100%',
-        backgroundColor: '#222',
         height: 70,
+        backgroundColor: '#222',
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    left: {
+        width: 70,
+        height: 35,
+        marginTop: 2,
+        alignItems: 'center',
+        justifyContent: 'flex-end'
+    },
+    center: {
+        flex: 1,        
         alignItems: 'center',
         justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden'
     },
-    containerIcone: {
-        left: 30,
-        height: '100%',
-        paddingTop: 5,
-        position: 'absolute',
-        justifyContent: 'center'
+    right: {
+        width: 70,
     },
     title: {
         fontWeight: 'bold',
-        fontSize: 20
+        fontSize: 20        
     }
 });
 

@@ -3,9 +3,13 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Home from "../screens/Home";
 import ListWorkOrders from "../screens/ListWorkOrders";
 import Header from "../components/Header";
+import WorkOrderForm from "../screens/WorkOrderForm";
 
 export type RootStackParamList = {
     Home: undefined;
+    WorkOrderForm: {
+        id?: string;
+    } | undefined;
     ListWorkOrders: undefined;
 }
 
@@ -34,6 +38,14 @@ export function Navigation() {
                     options={{
                         // eslint-disable-next-line react/no-unstable-nested-components
                         header: (props) => <Header {...props} title="Ordens de serviço" />
+                    }}
+                />
+                <Stack.Screen 
+                    name="WorkOrderForm"
+                    component={WorkOrderForm}
+                    options={{
+                        // eslint-disable-next-line react/no-unstable-nested-components
+                        header: (props) => <Header {...props} title="Ficha ordem de serviço" />
                     }}
                 />
             </Stack.Navigator>

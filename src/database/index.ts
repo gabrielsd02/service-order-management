@@ -1,6 +1,7 @@
 import Realm from "realm";
-import { WorkOrder } from "./schemas/WorkOrder";
+import { WorkOrder } from "./schemas/WorkOrderSchema";
 
 export const realm = new Realm({
-    schema: [WorkOrder]
+    schema: [WorkOrder],
+    schemaVersion: 2
 })

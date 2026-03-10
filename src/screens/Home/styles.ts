@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     containerQuantityItems: {
         width: 280,
         gap: 5,
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: 'black',
         paddingVertical: 10, 
         paddingHorizontal: 14,
@@ -39,27 +39,16 @@ export const styles = StyleSheet.create({
         paddingBottom: 4,
         justifyContent: 'space-between'
     },
-    textQuantityItem: {
+    textItemLabel: {
+        fontSize: 16,
+        fontWeight: 'bold'
+    },
+    textItemValue: {
         fontSize: 16,
         fontWeight: 'semibold'
     },
     button: {
-        gap: 6,
-        paddingVertical: 10, 
-        paddingHorizontal: 14,
-        borderRadius: 6,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderWidth: 2,
         width: 280,
-        backgroundColor: 'rgba(0,0,0,0.3)'
-    },
-    textButton: {
-        fontSize: 18, 
-        flex: 1, 
-        textAlign: 'right', 
-        fontWeight: 'bold'
     },
     containerVersion: {
         width: '100%', 

@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { View } from "react-native";
 import { FontAwesomeFreeSolid } from "@react-native-vector-icons/fontawesome-free-solid";
-import { styles } from "./styles";
+import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { styles } from "./styles";
 import { RootStackParamList } from "../../navigation";
+import { useWorkOrders } from "../../store/useWorkOrders";
+import { useNetworkStore } from "../../store/useNetworkStore";
+import { useIsLoadingState } from "../../store/useIsLoadingStore";
+import { getWorkOrders } from "../../actions/workOrders/getWorkOrders";
 import TextWhite from "../../components/TextWhite";
 import Button from "../../components/Button";
 import Container from "../../components/Container";
+import ButtonIcon from "../../components/ButtonIcon";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 function Home({ navigation }: Props) {
+    const { workOrders, setWorkOrders } = useWorkOrders((state) => state);
+    const setIsLoading = useIsLoadingState((state) => state.setIsLoading);
+    const isConnectedInternet = useNetworkStore((state) => state.isConnectedInternet);
+
     const [amountItems, setAmountItems] = useState([
         {
             label: 'Total:',
@@ -30,6 +40,44 @@ function Home({ navigation }: Props) {
         }
     ]);
 
+    const changeAmount = async () => {
+        const orders = await getWorkOrders({
+            isConnectedInternet,
+            setIsLoading
+        });
+        if(!orders) return;
+
+        let total = orders.length;
+        let pending = 0;
+        let inProgress = 0;
+        let completed = 0;
+
+        orders.forEach(({ status }) => {
+            if(status === 'Pending') {
+                pending += 1;
+            } else if(status === 'In Progress') {
+                inProgress += 1;
+            } else if(status === 'Completed') {
+                completed += 1;
+            }
+        });
+
+        setAmountItems([
+            { label: 'Total:', value: total },
+            { label: 'Pendente:', value: pending },
+            { label: 'Em andamento:', value: inProgress },
+            { label: 'Finalizadas:', value: completed }
+        ]);
+        setWorkOrders(orders);
+    }
+
+    useFocusEffect(
+        useCallback(() => {
+            changeAmount();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [isConnectedInternet, workOrders])
+    )
+    
     return (
         <Container>
             <View style={styles.containerTitle}>
@@ -52,8 +100,8 @@ function Home({ navigation }: Props) {
                                     { borderBottomWidth: index === amountItems.length - 1 ? 0 : 1 }
                                 ]}
                             >
-                                <TextWhite style={styles.textQuantityItem}>{amountItem.label}</TextWhite>
-                                <TextWhite style={styles.textQuantityItem}>{amountItem.value}</TextWhite>
+                                <TextWhite style={styles.textItemLabel}>{amountItem.label}</TextWhite>
+                                <TextWhite style={styles.textItemValue}>{amountItem.value}</TextWhite>
                             </View>
                         )
                     })}
@@ -73,20 +121,18 @@ function Home({ navigation }: Props) {
                             Lista de técnicos
                         </TextWhite>
                     </Button> */}
-                    <Button
+                    <ButtonIcon
                         onPress={() => navigation.navigate('ListWorkOrders')}
                         style={styles.button}
-                    >
-                        <FontAwesomeFreeSolid 
-                            name="list"
-                            size={20}
-                            color={'white'}
-                            style={{ marginTop: 1.5 }}
-                        />
-                        <TextWhite style={styles.textButton}>
-                            Consultar OS(s)
-                        </TextWhite>
-                    </Button>
+                        text="Consultar OS(s)"
+                        iconProps={{
+                            name: 'list',
+                            size: 20,
+                            style: { 
+                                marginTop: 2 
+                            }
+                        }}
+                    />
                 </View>
             </View>
             <View style={styles.containerVersion}>

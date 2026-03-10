@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { 
+	KeyboardAvoidingView,
 	StatusBar, 
 	StyleSheet,
+	Platform,
 	useColorScheme 
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -28,7 +30,12 @@ function App() {
 		<SafeAreaProvider>
 			<StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 			<SafeAreaView style={styles.container}>
-				<Navigation />
+				<KeyboardAvoidingView
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					style={styles.keyboard}
+				>
+					<Navigation />
+				</KeyboardAvoidingView>
 				<Loading isLoading={isLoading} />
 			</SafeAreaView>
 		</SafeAreaProvider>
@@ -42,6 +49,9 @@ const styles = StyleSheet.create({
 		position: 'relative',
 		backgroundColor: '#3b3b3b'
 	},
+	keyboard: {
+		flex: 1
+	}
 });
 
 export default App;

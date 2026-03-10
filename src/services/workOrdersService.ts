@@ -1,4 +1,4 @@
-import { WorkOrder } from "../types/workOrder";
+import { SaveWorkOrderDTO, WorkOrder } from "../types/workOrder";
 import { api } from "./api";
 import { handleApiError } from "./handleApiError";
 
@@ -19,7 +19,7 @@ export const workOrdersService = {
             throw new Error(handleApiError(error));
         }
     },
-    async create(payload: WorkOrder): Promise<WorkOrder> {
+    async create(payload: SaveWorkOrderDTO): Promise<WorkOrder> {
         try {
             const { data } = await api.post("/work-orders", payload);
             return data;
@@ -27,9 +27,9 @@ export const workOrdersService = {
             throw new Error(handleApiError(error));
         }
     },
-    async update(id: string) {
+    async update(payload: SaveWorkOrderDTO) {
         try {
-            const { data } = await api.put(`/work-orders/${id}`);
+            const { data } = await api.put(`/work-orders/${payload.id!}`, payload);
             return data;
         } catch(error) {
             throw new Error(handleApiError(error));
