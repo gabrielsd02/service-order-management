@@ -38,3 +38,7 @@ yarn android
 ```
 
 Após executar estes comandos, irá iniciar o app em seu dispositivo!
+
+# Conflitos de dados ON e OFF
+
+Para lidar com conflitos entre o dado alterado via API e localmente, realizo uma verificação com as datas, onde a data atualizada mais recente entre eles, irá se sobrepor.
