@@ -37,8 +37,7 @@ export const workOrdersService = {
     },
     async delete(id: string) {
         try {
-            const { data } = await api.delete(`/work-orders/${id}`);
-            return data;
+            await api.delete(`/work-orders/${id}`);
         } catch(error) {
             throw new Error(handleApiError(error));
         }
