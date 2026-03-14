@@ -17,11 +17,12 @@ export const deleteWorkWorder = async ({
 
     try {
         if(!isConnectedInternet) {
-            const order = workOrdersRepository.getById(id);
-            if(order) {
+            const localOrder = workOrdersRepository.getById(id);
+            if(localOrder) {
                 workOrdersRepository.update({
-                    ...order,
+                    ...localOrder,
                     deleted: true,
+                    toSync: true,
                     deletedAt: new Date()
                 });
             }
@@ -29,6 +30,9 @@ export const deleteWorkWorder = async ({
             const order = await workOrdersService.getById(id);
             if(order) {
                 await workOrdersService.delete(id);
+
+                const localOrder = workOrdersRepository.getByApiId(id);
+                if(localOrder) workOrdersRepository.delete(localOrder._id);
             }
         }
     } catch(e: any) {

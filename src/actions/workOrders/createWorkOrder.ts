@@ -19,14 +19,18 @@ export const createWorkWorder = async ({
     const orderToCreate = {
         assignedTo: orderCreate.assignedTo,
         description: orderCreate.description,
-        status: orderCreate.status,
+        status: 'Pending',
         title: orderCreate.title,
-        createdAt: new Date()
-    };
+        createdAt: new Date(),
+        updatedAt: new Date()
+    } as Omit<WorkOrder, 'id'>;
 
     try {
         if(!isConnectedInternet) {
-            const orderCreated = workOrdersRepository.create(orderToCreate);
+            const orderCreated = workOrdersRepository.create({
+                ...orderToCreate,
+                toSync: true
+            });
             if(orderCreated) {
                 const assign = Object.assign(orderToCreate, orderCreated);
                 return {
@@ -35,7 +39,13 @@ export const createWorkWorder = async ({
                 }
             };
         } else {
-            await workOrdersService.create(orderToCreate);
+            const newApiOrder = await workOrdersService.create(orderToCreate);
+            const { id, ...rest } = newApiOrder;
+
+            workOrdersRepository.create({
+                apiId: id,
+                ...rest
+            });
         }
     } catch(e: any) {
         Alert.alert("Erro", e.message);

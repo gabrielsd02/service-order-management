@@ -1,4 +1,4 @@
-import { SaveWorkOrderDTO, WorkOrder } from "../types/workOrder";
+import { SaveWorkOrderDTO, WorkOrder, WorkOrdersSyncResponse } from "../types/workOrder";
 import { api } from "./api";
 import { handleApiError } from "./handleApiError";
 
@@ -27,7 +27,7 @@ export const workOrdersService = {
             throw new Error(handleApiError(error));
         }
     },
-    async update(payload: SaveWorkOrderDTO) {
+    async update(payload: SaveWorkOrderDTO): Promise<WorkOrder> {
         try {
             const { data } = await api.put(`/work-orders/${payload.id!}`, payload);
             return data;
@@ -43,9 +43,13 @@ export const workOrdersService = {
             throw new Error(handleApiError(error));
         }
     },
-    async sync() {
+    async sync(date: Date): Promise<WorkOrdersSyncResponse> {
         try {
-            const { data } = await api.get("/work-orders/sync");
+            const { data } = await api.get("/work-orders/sync", {
+                params: {
+                    since: date
+                }
+            });
             return data;
         } catch(error) {
             throw new Error(handleApiError(error));

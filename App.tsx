@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { 
 	KeyboardAvoidingView,
 	StatusBar, 
@@ -10,21 +10,36 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Navigation } from './src/navigation';
 import { useNetworkStore } from './src/store/useNetworkStore';
 import { useIsLoadingState } from './src/store/useIsLoadingStore';
+import { syncWorkOrdersOnline } from './src/actions/workOrders/syncWorkOrdersOnline';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import Loading from './src/components/Loading';
 
 function App() {
+	const prevConnection = useRef(true);
+
 	const isDarkMode = useColorScheme() === 'dark';
-	const isLoading = useIsLoadingState((state) => state.isLoading);
+	const { isLoading, setIsLoading } = useIsLoadingState((state) => state);	
 	const setIsConnectedInternet = useNetworkStore((state) => state.setIsConnectedInternet);
 	
 	useEffect(() => {
 		const unsubscribe  = NetInfo.addEventListener(state => {
-			setIsConnectedInternet(!!state.isConnected);
+			const isConnected = !!state.isConnected;
+			
+			if(prevConnection.current === isConnected) return;
+
+			prevConnection.current = isConnected;
+			setIsConnectedInternet(isConnected);
+
+			if(isConnected) {
+				syncWorkOrdersOnline({ setIsLoading });
+			} else {
+				AsyncStorage.setItem('app-get-order:lastSyncAt', JSON.stringify(new Date().toString()));
+			}
 		});
 
 		return () => unsubscribe();
-	}, [setIsConnectedInternet])
+	}, [])
 	
 	return (
 		<SafeAreaProvider>

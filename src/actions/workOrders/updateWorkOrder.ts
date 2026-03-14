@@ -2,9 +2,10 @@ import { Alert } from "react-native";
 import { workOrdersRepository } from "../../database/repositories/workOrdersRepository";
 import { workOrdersService } from "../../services/workOrdersService";
 import { WorkOrder } from "../../types/workOrder";
+import { workOrderFromApiToLocal } from "./workOrderFromApiToLocal";
 
 type Props = {
-    orderUpdate: WorkOrder;
+    orderUpdate: WorkOrder & { apiId?: string };
     isConnectedInternet: boolean;
     setIsLoading: (value: boolean) => void;
 }
@@ -19,8 +20,7 @@ export const updateWorkWorder = async ({
     const mountOrderUpdate = {
         assignedTo: orderUpdate.assignedTo,
         description: orderUpdate.description,
-        status: orderUpdate.status,
-        apiId: orderUpdate.id,
+        status: orderUpdate.status,        
         title: orderUpdate.title,
         updatedAt: new Date()
     }
@@ -31,7 +31,9 @@ export const updateWorkWorder = async ({
             if(order) {
                 const orderUpdateRealm = {
                     ...mountOrderUpdate,
+                    apiId: order.apiId ? order.apiId : orderUpdate.apiId,
                     _id: orderUpdate.id!,
+                    toSync: true
                 }
                 const orderUpdated = workOrdersRepository.update(orderUpdateRealm);
                 if(orderUpdated) return Object.assign(orderUpdateRealm, orderUpdated);
@@ -41,7 +43,11 @@ export const updateWorkWorder = async ({
                 ...mountOrderUpdate,
                 id: orderUpdate.id!
             };
-            await workOrdersService.update(orderUpdateApi);
+            const workOrderApiUpdated = await workOrdersService.update(orderUpdateApi);
+ 
+            if(workOrderApiUpdated) {
+                workOrderFromApiToLocal(workOrderApiUpdated);
+            }
         }
     } catch(e: any) {
         Alert.alert("Erro", e.message);

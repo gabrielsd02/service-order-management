@@ -49,9 +49,10 @@ export const styles = StyleSheet.create({
     },
     containerButtonTrash: {
         width: '100%', 
-        alignItems: 'flex-end', 
-        justifyContent: 'center', 
-        paddingRight: 10,
+        alignItems: 'center', 
+        flexDirection: 'row',
+        justifyContent: 'space-between', 
+        paddingHorizontal: 10,
         paddingTop: 4,
     },
     buttonTrash: {
@@ -62,5 +63,9 @@ export const styles = StyleSheet.create({
         alignItems: 'center', 
         justifyContent:'center', 
         borderColor: 'white'
+    },
+    textDate: {
+        fontStyle: 'italic', 
+        fontSize: 13
     }
 });

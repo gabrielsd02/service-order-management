@@ -6,9 +6,15 @@ import Button from "./Button";
 
 type Props = NativeStackHeaderProps & {
     title: string;
+    isConnectedInternet: boolean;
 };
 
-function Header({ title, navigation }: Props) {
+function Header({ 
+    title,
+    isConnectedInternet, 
+    navigation 
+}: Props) {
+
     return (
         <View style={styles.header}>
             <Button 
@@ -26,7 +32,13 @@ function Header({ title, navigation }: Props) {
                     {title}
                 </TextWhite>
             </View>
-            <View style={styles.right} />
+            <View style={styles.right}>
+                <FontAwesomeFreeSolid 
+                    name="wifi-strong"
+                    size={18}
+                    color={isConnectedInternet ? 'green' : 'red'}
+                />
+            </View>
         </View>
     )
 }
@@ -38,6 +50,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#222',
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between'
     },
     left: {
         width: 70,
@@ -53,6 +66,9 @@ const styles = StyleSheet.create({
     },
     right: {
         width: 70,
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     title: {
         fontWeight: 'bold',

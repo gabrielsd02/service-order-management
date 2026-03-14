@@ -3,6 +3,7 @@ import { mapApiToWorkOrder, mapRealmToWorkOrder } from "../../mappers/workOrder.
 import { WorkOrderStore } from "../../types/workOrder";
 import { workOrdersRepository } from "../../database/repositories/workOrdersRepository";
 import { workOrdersService } from "../../services/workOrdersService";
+import { workOrderFromApiToLocal } from "./workOrderFromApiToLocal";
 
 type Props = {
     isConnectedInternet: boolean;
@@ -20,8 +21,15 @@ export const getWorkOrders = async ({
             const localOrders = workOrdersRepository.getAll();
             return localOrders.map(mapRealmToWorkOrder);
         } else {
-            const response = await workOrdersService.getAll();
-            return response.map(mapApiToWorkOrder);
+            const workOrdersApi = await workOrdersService.getAll();
+
+            if(workOrdersApi?.length > 0) {
+                for(const orderApi of workOrdersApi) {
+                    workOrderFromApiToLocal(orderApi);
+                }
+            }
+
+            return workOrdersApi.map(mapApiToWorkOrder);
         }
     } catch(e: any) {
         Alert.alert("Erro", e.message);

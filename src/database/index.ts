@@ -3,5 +3,5 @@ import { WorkOrder } from "./schemas/WorkOrderSchema";
 
 export const realm = new Realm({
     schema: [WorkOrder],
-    schemaVersion: 2
+    schemaVersion: 3
 })

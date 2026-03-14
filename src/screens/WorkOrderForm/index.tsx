@@ -1,22 +1,30 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Keyboard, ScrollView, TouchableOpacity, View } from "react-native";
+import { Alert, Keyboard, ScrollView, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { RootStackParamList } from "../../navigation";
 import { useIsLoadingState } from "../../store/useIsLoadingStore";
-import { SaveWorkOrderDTO, WorkOrder } from "../../types/workOrder";
+import { SaveWorkOrderDTO, WorkOrder, WorkOrderRealm } from "../../types/workOrder";
 import { styles } from "./styles";
 import { useNetworkStore } from "../../store/useNetworkStore";
 import { getWorkOrderByid } from "../../actions/workOrders/getWorkOrderById";
 import { createWorkWorder } from "../../actions/workOrders/createWorkOrder";
 import { updateWorkWorder } from "../../actions/workOrders/updateWorkOrder";
+import { formatDate, formatTime } from "../../functions";
+import { deleteWorkWorder } from "../../actions/workOrders/deleteWorkOrder";
 import Container from "../../components/Container";
 import FormField from "../../components/FormField";
 import ButtonIcon from "../../components/ButtonIcon";
 import TextWhite from "../../components/TextWhite";
 import FontAwesomeFreeSolid from "@react-native-vector-icons/fontawesome-free-solid";
+import Button from "../../components/Button";
 
 type WorkOrderFormProps = NativeStackScreenProps<RootStackParamList, 'WorkOrderForm'>;
+
+type FormProps = Omit<WorkOrderRealm, '_id'> & { 
+    id: string | null;
+    apiId?: string; 
+};
 
 const STATUS = [
     {
@@ -43,12 +51,14 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
     const setIsLoading = useIsLoadingState((state) => state.setIsLoading);
     
     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-    const [form, setForm] = useState<SaveWorkOrderDTO>({
-        id: undefined,
+    const [form, setForm] = useState<FormProps>({
+        id: null,
         title: '',
         description: '',
         status: 'Pending',
-        assignedTo: ''
+        assignedTo: '',
+        completed: false,
+        deleted: false        
     });
 
     const getOrder = async () => {
@@ -64,7 +74,12 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
                     assignedTo: order.assignedTo,
                     title: order.title,
                     description: order.description,
-                    status: order.status
+                    status: order.status,
+                    updatedAt: order.updatedAt, 
+                    createdAt: order.createdAt,
+                    completed: order.completed ?? false,
+                    deleted: order.deleted ?? false,
+                    deletedAt: order.deletedAt
                 });
             }
         } catch(e: any) {
@@ -106,12 +121,21 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
         }
     }
 
-    const handleChange = (field: keyof SaveWorkOrderDTO, value: string) => {
-        setForm(prev => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
+    const deleteOrder = async () => {
+        if(!id) return;
+
+        try { 
+            await deleteWorkWorder({
+                id,
+                isConnectedInternet,
+                setIsLoading
+            });
+        } catch(e: any) {
+            Alert.alert("Erro", e.message);
+        } finally {
+            navigation.goBack();
+        }
+    }
 
     const validadeForm = () => {
         if(!form.title.trim()) {
@@ -133,6 +157,33 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
         return null;
     }
 
+    const handleChange = (field: keyof SaveWorkOrderDTO, value: string) => {
+        if(form.deleted) return;
+
+        setForm(prev => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const handleDelete = () => {
+        Alert.alert(
+            "Remover ordem de serviço",
+            "Você deseja remover essa ordem de serviço?",
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Confirmar',
+                    onPress: () => deleteOrder()
+                }
+            ],
+            { cancelable: true }
+        );
+    }
+
     const handleSubmit = () => {
         const error = validadeForm();
 
@@ -144,10 +195,30 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
         saveOrder();
     };
 
+    const handleTextDate = () => {
+        let textDate = '';
+
+        if(form.deletedAt) {
+            textDate = `Deletado em: ${formatDate(form.deletedAt)} às ${formatTime(form.deletedAt)}`;
+        } else if(form.updatedAt) {
+            textDate = `Editado em: ${formatDate(form.updatedAt)} às ${formatTime(form.updatedAt)}`;
+        } else if(form.createdAt) {
+            textDate = `Criado em: ${formatDate(form.createdAt)} às ${formatTime(form.createdAt)}`;
+        }
+
+        return textDate;
+    }
+
+    const isStatusBlocked = useCallback((currentStatus: string) => {
+        return (!id && currentStatus !== 'Pending') 
+            ? true
+            : false
+        ;
+    }, [id]);
+
     useFocusEffect(
         useCallback(() => {
             if(id) getOrder();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [isConnectedInternet])
     )
 
@@ -169,24 +240,25 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
             keyboardDidShowListener.remove();
             keyboardDidHideListener.remove();
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return (
         <Container>
             {id && (
                 <View style={styles.containerButtonTrash}>
-                    <TouchableOpacity 
-                        activeOpacity={0.5}
+                    <TextWhite style={styles.textDate}>
+                        {handleTextDate()}
+                    </TextWhite>
+                    <Button 
                         style={styles.buttonTrash}
-                        onPress={() => {}}
+                        onPress={handleDelete}
                     >
                         <FontAwesomeFreeSolid 
                             name="trash"
                             size={18}
                             color={'#dddddd'}
                         />
-                    </TouchableOpacity>
+                    </Button>
                 </View>
             )}
             <ScrollView 
@@ -200,6 +272,7 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
                     placeholder="Digite o título da ordem de serviço"
                     value={form.title}
                     onChangeText={value => handleChange('title', value)}
+                    editable={!form.deleted}
                 />
                 <FormField 
                     label="Descrição"
@@ -210,12 +283,14 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
                     textAlignVertical={'top'}
                     numberOfLines={3}
                     style={{ height: 100 }}
+                    editable={!form.deleted}
                 />
                 <FormField 
                     label="Responsável*"
                     placeholder="Digite o nome do responsável"
                     value={form.assignedTo}
                     onChangeText={value => handleChange('assignedTo', value)}
+                    editable={!form.deleted}
                 />
                 <TextWhite style={styles.label}>
                     Status*
@@ -225,7 +300,10 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
                         <ButtonIcon
                             key={s.value}
                             text={s.label}
-                            onPress={() => handleChange('status', s.value)}
+                            onPress={() => {
+                                if(isStatusBlocked(s.value)) return;
+                                handleChange('status', s.value);
+                            }}
                             iconProps={{
                                 name: 'circle',
                                 size: 18,
@@ -235,8 +313,8 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
                             textStyle={[styles.textStyleButtonSelect, {
                                 color: s.color
                             }]}
-                            // eslint-disable-next-line react-native/no-inline-styles
                             style={[styles.buttonSelect, {
+                                opacity: isStatusBlocked(s.value) ? 0.5 : 1, 
                                 borderBottomWidth: i === STATUS.length - 1 ? 0 : 2,
                             }]}
                         />
@@ -254,7 +332,6 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
                             marginTop: 2
                         }
                     }}
-                    // eslint-disable-next-line react-native/no-inline-styles
                     style={[styles.button, {
                          backgroundColor: '#8B1E1E'
                     }]}
@@ -266,13 +343,11 @@ function WorkOrderForm({ route, navigation }: WorkOrderFormProps) {
                         name: "check",
                         size: 24
                     }}
-                    // eslint-disable-next-line react-native/no-inline-styles
                     style={[styles.button, {
                          backgroundColor: '#2E7D32'
                     }]}
                 />
-            </View>}
-            
+            </View>}            
         </Container>
     )
 }

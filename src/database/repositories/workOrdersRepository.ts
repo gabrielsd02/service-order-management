@@ -5,7 +5,7 @@ import { WorkOrderRealm } from "../../types/workOrder";
 
 const TYPE_OBJECT = "WorkOrder";
 
-function transformResultObject(result: WorkOrder | WorkOrderRealm): WorkOrderRealm {
+const transformResultObject = (result: WorkOrder | WorkOrderRealm): WorkOrderRealm => {
     const assembleResults = {
         _id: typeof result._id === 'string' ? result._id : result._id.toHexString(),
         apiId: result.apiId,
@@ -22,11 +22,18 @@ function transformResultObject(result: WorkOrder | WorkOrderRealm): WorkOrderRea
     return assembleResults;
 }
 
-function transformResultArray(results: Results<WorkOrder>): WorkOrderRealm[] {
+const transformResultArray = (results: Results<WorkOrder>): WorkOrderRealm[] => {
     const assembleResults: WorkOrderRealm[] = results
         .map(r => transformResultObject(r))
     ;
     return assembleResults;
+}
+
+const toObjectId = (id: string | BSON.ObjectId) => {
+    return id instanceof BSON.ObjectId
+        ? id
+        : new BSON.ObjectId(id)
+    ;
 }
 
 export const workOrdersRepository = {
@@ -39,13 +46,66 @@ export const workOrdersRepository = {
             throw new Error("Houve um erro ao consultar ordens de serviço");
         }
     },
+    getAllExcludingIds(_ids: string[]): WorkOrderRealm[] {        
+        try {
+            if(!_ids.length) {
+                return workOrdersRepository.getAll();
+            }
+
+            const idsToIgnore = _ids.map(toObjectId);
+            const result = (
+                realm.objects<WorkOrder>(TYPE_OBJECT)
+                    .filtered("NOT (_id IN $0)", idsToIgnore)
+            );
+            return transformResultArray(result);
+        } catch(e) {
+            console.error('Error fetching ignoring ids',e);
+            throw new Error("Houve um erro ao consultar ordens de serviço");
+        }
+    },
+    getAllToSync(): WorkOrderRealm[] {
+        try {
+            const result = (
+                realm.objects<WorkOrder>(TYPE_OBJECT)
+                    .filtered("toSync == $0", true)
+            );
+            return transformResultArray(result);
+        } catch(e) {
+            console.error('Error fetching by api id',e);
+            throw new Error("Houve um erro ao consultar ordens de serviço");
+        }
+    },
     getById(_id: string): WorkOrderRealm | undefined {
         try {
-            const objectId = new BSON.ObjectId(_id);
+            const objectId = toObjectId(_id);
             const result = realm.objectForPrimaryKey<WorkOrder>(TYPE_OBJECT, objectId);
             if(result) return transformResultObject(result);
         } catch(e) {
-            console.error('Error fetching all',e);
+            console.error('Error fetching by id',e);
+            throw new Error("Houve um erro ao consultar ordens de serviço");
+        }
+    },
+    getByApiId(apiId: string) {
+        try {
+            const result = (
+                realm.objects<WorkOrder>(TYPE_OBJECT)
+                    .filtered("apiId == $0", apiId)[0] ?? null
+            );
+            if(result) return transformResultObject(result);
+        } catch(e) {
+            console.error('Error fetching by api id',e);
+            throw new Error("Houve um erro ao consultar ordens de serviço");
+        }
+    },    
+    getLast() {
+        try {
+            const result = (
+                realm.objects<WorkOrder>(TYPE_OBJECT)
+                    .sorted("createdAt", true)[0] ?? null
+            );
+            return transformResultObject(result);
+        } catch(e) {
+            console.error('Error fetching last',e);
             throw new Error("Houve um erro ao consultar ordens de serviço");
         }
     },
@@ -64,7 +124,7 @@ export const workOrdersRepository = {
         try {
             const objectOrder = {
                 ...order,
-                _id: new BSON.ObjectId(order._id),
+                _id: toObjectId(order._id),
                 updatedAt: new Date()
             }
             const updated = realm.write(() => {
@@ -78,7 +138,7 @@ export const workOrdersRepository = {
     },
     delete(_id: string) {
         try {
-            const objectId = new BSON.ObjectId(_id);
+            const objectId = toObjectId(_id);
             realm.write(() => {
                 const order = realm.objectForPrimaryKey(TYPE_OBJECT, objectId)
                 if(order) realm.delete(order);

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Alert, FlatList, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, RefreshControl, View } from "react-native";
 import { FontAwesomeFreeSolid } from "@react-native-vector-icons/fontawesome-free-solid";
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -9,9 +9,11 @@ import { styles } from "./styles";
 import { RootStackParamList } from "../../navigation";
 import { useWorkOrders } from "../../store/useWorkOrders";
 import { getWorkOrders } from "../../actions/workOrders/getWorkOrders";
+import { WorkOrderStore } from "../../types/workOrder";
 import Container from "../../components/Container";
 import ItemList from "./ItemList";
 import ListVoid from "./ListVoid";
+import Button from "../../components/Button";
 
 type ListWorkOrdersProps = NativeStackScreenProps<RootStackParamList, 'ListWorkOrders'>;
 
@@ -30,7 +32,8 @@ function ListWorkOrders({ navigation }: ListWorkOrdersProps) {
                     ? setIsLoading
                     : setIsLoadingList
             });
-            if(orders) setWorkOrders(orders);
+            
+            if(orders) setWorkOrders([...orders]);
         } catch(e: any) {
             Alert.alert("Erro", e.message);
         }
@@ -42,10 +45,16 @@ function ListWorkOrders({ navigation }: ListWorkOrdersProps) {
         })
     }
 
+    const handleEditItem = (item: WorkOrderStore) => {
+        isConnectedInternet ?
+            editItem(item.id!) :
+            editItem(item.idRealm!)
+        ;
+    }
+
     useFocusEffect(
         useCallback(() => {
             loadOrders();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [isConnectedInternet])
     )
     
@@ -53,27 +62,29 @@ function ListWorkOrders({ navigation }: ListWorkOrdersProps) {
         <Container>
             <FlatList 
                 data={workOrders}
-                renderItem={(props) => <ItemList 
-                    key={props.index} 
-                    item={props.item}
-                    editItem={() => editItem(props.item.id ? props.item.id : props.item.idRealm!)}
-                    deleteItem={() => {}}
-                />}
-                refreshing={isLoadingList}
+                renderItem={({ index, item }) => <ItemList 
+                    key={index} 
+                    item={item}
+                    editItem={() => handleEditItem(item)}
+                />}                
+                contentContainerStyle={styles.contentContainerStyleList}
+                style={styles.list}
                 ListEmptyComponent={ListVoid}
-                contentContainerStyle={{ flex: 1, paddingBottom: 30, paddingTop: 10 }}
+                refreshControl={
+                    <RefreshControl 
+                        refreshing={isLoadingList}
+                        onRefresh={loadOrders}
+                    />
+                }
             />
             <View style={styles.containerButtonRegister}>
-                <TouchableOpacity 
-                    activeOpacity={0.5} 
-                    onPress={() => navigation.navigate('WorkOrderForm')}
-                >
+                <Button onPress={() => navigation.navigate('WorkOrderForm')}>
                     <FontAwesomeFreeSolid 
                         name="plus-circle"
-                        size={62}
+                        size={64}
                         color={'white'}
                     />
-                </TouchableOpacity>
+                </Button>
             </View>
         </Container>
     )

@@ -13,6 +13,7 @@ export class WorkOrder extends Realm.Object<WorkOrder> {
     deletedAt?: Date;
     completed?: boolean;
     deleted?: boolean;
+    toSync?: boolean;
 
     static schema: Realm.ObjectSchema = {
         name: "WorkOrder",
@@ -41,6 +42,10 @@ export class WorkOrder extends Realm.Object<WorkOrder> {
                 default: false
             },
             deleted: {
+                type: 'bool',
+                default: false
+            },
+            toSync: {
                 type: 'bool',
                 default: false
             }
