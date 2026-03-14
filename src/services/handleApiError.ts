@@ -4,7 +4,7 @@ export function handleApiError(error: unknown): string {
     if(axios.isAxiosError(error)) {
         const message = (
             error.response?.data.message || 
-            error.response?.data.errro ||
+            error.response?.data.erro ||
             "Erro na comunicação com o servidor"
         );
 
